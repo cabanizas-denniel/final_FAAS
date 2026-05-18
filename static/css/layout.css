@@ -30,7 +30,6 @@ body {
   color: var(--color-header-text);
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 0 var(--space-lg);
   z-index: 100;
   box-shadow: var(--shadow-md);
@@ -53,21 +52,6 @@ body {
   display: grid;
   place-items: center;
   font-size: 1rem;
-}
-
-.header-nav {
-  display: flex;
-  gap: var(--space-lg);
-  font-size: 0.8rem;
-  letter-spacing: 0.06em;
-  opacity: 0.9;
-}
-.header-nav a { color: inherit; text-decoration: none; }
-.header-nav a:hover { opacity: 0.75; }
-
-.header-user {
-  font-size: 0.85rem;
-  opacity: 0.9;
 }
 
 .app-shell {

@@ -13,11 +13,6 @@ async function parseJson(res) {
   return data;
 }
 
-export async function fetchHealth() {
-  const res = await fetch(API.health);
-  return parseJson(res);
-}
-
 export async function listJobs(limit = 100) {
   const res = await fetch(`${API.transcriptions}?limit=${limit}`);
   return parseJson(res);

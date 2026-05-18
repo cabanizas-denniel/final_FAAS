@@ -4,7 +4,6 @@
  */
 export const API = {
   transcriptions: "/transcriptions",
-  health: "/health",
 };
 
 export const PROFILES = [

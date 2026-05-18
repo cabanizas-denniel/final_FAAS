@@ -2,21 +2,9 @@
  * Application bootstrap.
  */
 
-import { fetchHealth } from "./api.js";
 import { closeModal } from "./dom.js";
 import { Dashboard } from "./dashboard.js";
 import { UploadModal } from "./upload.js";
-
-async function initHealth() {
-  const el = document.querySelector("#health-status");
-  if (!el) return;
-  try {
-    const h = await fetchHealth();
-    el.textContent = h.model_loaded ? `Model: ${h.model} (${h.device})` : "Loading model…";
-  } catch {
-    el.textContent = "API offline — start Docker or uvicorn";
-  }
-}
 
 function initTranscriptModal() {
   const modal = document.querySelector("#transcript-modal");
@@ -40,7 +28,6 @@ const upload = new UploadModal({
 });
 
 dashboard.start();
-initHealth();
 initTranscriptModal();
 
 // Expose for debugging in browser console
