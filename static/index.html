@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transcribe — Audio Transcription</title>
+  <link rel="stylesheet" href="/static/css/tokens.css" />
+  <link rel="stylesheet" href="/static/css/components.css" />
+  <link rel="stylesheet" href="/static/css/layout.css" />
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="/">
+      <span class="brand__logo">🎙</span>
+      Transcribe
+    </a>
+    <nav class="header-nav" aria-label="Main">
+      <a href="/docs" target="_blank" rel="noopener">API Docs</a>
+      <a href="/health" target="_blank" rel="noopener">Health</a>
+    </nav>
+    <span class="header-user" id="health-status">Connecting…</span>
+  </header>
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="usage-card">
+        <div class="usage-card__label">Local FaaS — unlimited transcriptions</div>
+        <div class="usage-card__label">Powered by faster-whisper</div>
+        <div class="progress" style="margin-top:0.75rem">
+          <div class="progress__bar" style="width:100%"></div>
+        </div>
+      </div>
+
+      <p class="sidebar-nav__section">Shortcuts</p>
+      <ul class="sidebar-nav">
+        <li>
+          <a class="sidebar-nav__link is-active" href="/">
+            <span>📋</span> Recent Files
+          </a>
+        </li>
+      </ul>
+    </aside>
+
+    <main class="main">
+      <section class="card panel">
+        <div class="panel__toolbar">
+          <h1 class="panel__title"><span>📋</span> Recent Files</h1>
+          <div class="panel__actions">
+            <button type="button" class="btn btn-primary" id="btn-open-upload">
+              ☁️ Transcribe Files
+            </button>
+          </div>
+        </div>
+
+        <div id="empty-state" class="hidden"></div>
+
+        <div class="table-wrap">
+          <table class="data-table" aria-label="Recent transcriptions">
+            <thead>
+              <tr>
+                <th scope="col" style="width:2rem"></th>
+                <th scope="col">Name</th>
+                <th scope="col">Uploaded</th>
+                <th scope="col">Duration</th>
+                <th scope="col">Mode</th>
+                <th scope="col">Status</th>
+                <th scope="col" style="width:3rem"></th>
+              </tr>
+            </thead>
+            <tbody id="jobs-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="upload-modal" role="dialog" aria-modal="true" aria-labelledby="upload-title">
+    <div class="modal">
+      <div class="modal__header">
+        <h2 class="modal__title" id="upload-title">Transcribe audio</h2>
+        <button type="button" class="btn btn-ghost" id="btn-close-upload" aria-label="Close">✕</button>
+      </div>
+
+      <div class="field">
+        <label class="field__label">Audio / video file</label>
+        <div class="dropzone" id="dropzone">
+          <p class="dropzone__title">Drag &amp; drop</p>
+          <p class="dropzone__hint" id="dropzone-hint">
+            mp3, mp4, m4a, mov, aac, wav, ogg, flac, webm, mpeg, wma, wmv
+          </p>
+          <p class="dropzone__or">— OR —</p>
+          <button type="button" class="btn btn-ghost">Browse files</button>
+          <input type="file" id="file-input" class="hidden" accept="audio/*,video/*,.mp3,.mp4,.m4a,.wav,.ogg,.flac,.webm,.mov,.aac,.mpeg,.wma,.wmv" />
+        </div>
+        <p id="selected-filename" class="hidden" style="margin-top:0.75rem;font-weight:600;color:var(--color-primary)"></p>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="language-select">Audio language</label>
+        <select id="language-select"></select>
+      </div>
+
+      <div class="field">
+        <span class="field__label">Transcription mode</span>
+        <div id="mode-container"></div>
+      </div>
+
+      <div id="upload-progress" class="hidden" style="margin-bottom:1rem"></div>
+
+      <button type="button" class="btn btn-primary btn-lg" id="btn-transcribe">Transcribe</button>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="transcript-modal" role="dialog" aria-modal="true">
+    <div class="modal" style="width:min(720px,100%)">
+      <div class="modal__header">
+        <div>
+          <h2 class="modal__title" id="transcript-title">Transcript</h2>
+          <p id="transcript-meta" style="margin:0.25rem 0 0;color:var(--color-text-muted);font-size:0.85rem"></p>
+        </div>
+        <button type="button" class="btn btn-ghost" id="btn-close-transcript" aria-label="Close">✕</button>
+      </div>
+      <div class="transcript-panel" id="transcript-body"></div>
+    </div>
+  </div>
+
+  <script type="module" src="/static/js/app.js"></script>
+</body>
+</html>

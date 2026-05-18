@@ -1,0 +1,33 @@
+.git
+.gitignore
+.dockerignore
+README.md
+Dockerfile
+docker-compose.yml
+
+# Local Python artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Tests & caches
+tests/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local data – mounted at runtime
+uploads/
+*.log
+
+# Local env file – injected via env_file in compose
+.env
