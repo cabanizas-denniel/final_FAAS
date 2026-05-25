@@ -33,8 +33,9 @@ class Job:
     error: Optional[str] = None
     result: Optional[TranscriptionResult] = None
     language: Optional[str] = None
-    profile: TranscriptionProfile = TranscriptionProfile.WHALE
+    profile: TranscriptionProfile = TranscriptionProfile.PRECISE
     beam_size: int = 5
+    include_timestamps: bool = False
 
     def to_info(self) -> JobInfo:
         return JobInfo(
@@ -46,6 +47,7 @@ class Job:
             finished_at=self.finished_at,
             error=self.error,
             profile=self.profile,
+            include_timestamps=self.include_timestamps,
             result=self.result,
         )
 
@@ -63,8 +65,9 @@ class JobStore:
         filename: str,
         audio_path: Path,
         language: Optional[str] = None,
-        profile: TranscriptionProfile = TranscriptionProfile.WHALE,
+        profile: TranscriptionProfile = TranscriptionProfile.PRECISE,
         beam_size: int = 5,
+        include_timestamps: bool = False,
     ) -> Job:
         job = Job(
             id=uuid.uuid4().hex,
@@ -73,6 +76,7 @@ class JobStore:
             language=language,
             profile=profile,
             beam_size=beam_size,
+            include_timestamps=include_timestamps,
         )
         async with self._lock:
             self._jobs[job.id] = job

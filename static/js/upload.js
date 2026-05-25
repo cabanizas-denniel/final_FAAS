@@ -3,7 +3,13 @@
  */
 
 import { uploadTranscription, pollUntilDone } from "./api.js";
-import { ALLOWED_EXT, LANGUAGES, PROFILES, PROGRESS } from "./config.js";
+import {
+  ALLOWED_EXT,
+  isAllowedUpload,
+  LANGUAGES,
+  PROFILES,
+  PROGRESS,
+} from "./config.js";
 import { renderModeCards, renderProgressBar } from "./components.js";
 import { $, closeModal, openModal } from "./dom.js";
 
@@ -11,7 +17,7 @@ export class UploadModal {
   constructor({ backdrop, onComplete }) {
     this.backdrop = backdrop;
     this.onComplete = onComplete;
-    this.selectedProfile = "whale";
+    this.selectedProfile = "precise";
     this.selectedFile = null;
     this.abort = null;
 
@@ -22,6 +28,7 @@ export class UploadModal {
     this.progressWrap = $("#upload-progress");
     this.submitBtn = $("#btn-transcribe");
     this.fileNameEl = $("#selected-filename");
+    this.timestampsCheckbox = $("#include-timestamps");
 
     this._bind();
     this._renderModes();
@@ -77,6 +84,12 @@ export class UploadModal {
 
   _pickFile(file) {
     if (!file) return;
+    if (!isAllowedUpload(file.name)) {
+      alert(
+        `Unsupported file type. Allowed extensions: ${ALLOWED_EXT}`
+      );
+      return;
+    }
     this.selectedFile = file;
     this.fileNameEl.textContent = file.name;
     this.fileNameEl.classList.remove("hidden");
@@ -126,6 +139,7 @@ export class UploadModal {
       const created = await uploadTranscription(this.selectedFile, {
         language: this.languageSelect.value || undefined,
         profile: this.selectedProfile,
+        includeTimestamps: this.timestampsCheckbox?.checked ?? false,
         onUploadProgress: (pct) => progress.setPercent(pct, "Uploading file…"),
       });
 

@@ -92,14 +92,14 @@ async def _persist_upload(
 def _resolve_profile(profile: Optional[str]) -> tuple[TranscriptionProfile, int]:
     """Map a UI profile name to enum + beam size (single source of truth)."""
     if not profile:
-        chosen = TranscriptionProfile.WHALE
+        chosen = TranscriptionProfile.PRECISE
     else:
         try:
             chosen = TranscriptionProfile(profile.lower())
         except ValueError as exc:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid profile '{profile}'. Use: cheetah, dolphin, whale.",
+                detail=f"Invalid profile '{profile}'. Use: quick, standard, precise.",
             ) from exc
     return chosen, PROFILE_BEAM_SIZES[chosen]
 
@@ -109,6 +109,7 @@ async def _create_job_from_upload(
     file: UploadFile,
     language: Optional[str],
     profile: Optional[str],
+    include_timestamps: bool,
     settings: Settings,
     job_store: JobStore,
 ) -> tuple[Path, Job]:
@@ -127,6 +128,7 @@ async def _create_job_from_upload(
         language=normalize_language(language),
         profile=chosen_profile,
         beam_size=beam_size,
+        include_timestamps=include_timestamps,
     )
     return audio_path, job
 
@@ -159,8 +161,12 @@ async def create_transcription(
         description="Optional ISO 639-1 language code (e.g. 'en'). Auto-detected if omitted.",
     ),
     profile: Optional[str] = Form(
-        default="whale",
-        description="Speed vs accuracy: cheetah | dolphin | whale.",
+        default="precise",
+        description="Speed vs accuracy: quick | standard | precise.",
+    ),
+    include_timestamps: bool = Form(
+        default=False,
+        description="Include time ranges in transcript view and TXT export.",
     ),
     settings: Settings = Depends(get_settings_dep),
     job_store: JobStore = Depends(get_job_store),
@@ -170,6 +176,7 @@ async def create_transcription(
         file=file,
         language=language,
         profile=profile,
+        include_timestamps=include_timestamps,
         settings=settings,
         job_store=job_store,
     )
@@ -195,7 +202,8 @@ async def create_transcription(
 async def create_transcription_sync(
     file: UploadFile = File(...),
     language: Optional[str] = Form(default=None),
-    profile: Optional[str] = Form(default="whale"),
+    profile: Optional[str] = Form(default="precise"),
+    include_timestamps: bool = Form(default=False),
     settings: Settings = Depends(get_settings_dep),
     job_store: JobStore = Depends(get_job_store),
     worker: TranscriptionWorker = Depends(get_worker),
@@ -204,6 +212,7 @@ async def create_transcription_sync(
         file=file,
         language=language,
         profile=profile,
+        include_timestamps=include_timestamps,
         settings=settings,
         job_store=job_store,
     )

@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Transcribe — Audio Transcription</title>
+  <title>Swiftcription</title>
+  <link rel="icon" type="image/png" href="/static/img/logo.png" />
   <link rel="stylesheet" href="/static/css/tokens.css" />
   <link rel="stylesheet" href="/static/css/components.css" />
   <link rel="stylesheet" href="/static/css/layout.css" />
@@ -11,21 +12,13 @@
 <body>
   <header class="app-header">
     <a class="brand" href="/">
-      <span class="brand__logo">🎙</span>
-      Transcribe
+      <img class="brand__logo" src="/static/img/logobig.png" alt="Our Logo" style="height:1.5em;vertical-align:middle;" />
+      Swiftcription — Audio Transcription
     </a>
   </header>
 
   <div class="app-shell">
     <aside class="sidebar">
-      <div class="usage-card">
-        <div class="usage-card__label">Local FaaS — unlimited transcriptions</div>
-        <div class="usage-card__label">Powered by faster-whisper</div>
-        <div class="progress" style="margin-top:0.75rem">
-          <div class="progress__bar" style="width:100%"></div>
-        </div>
-      </div>
-
       <p class="sidebar-nav__section">Shortcuts</p>
       <ul class="sidebar-nav">
         <li>
@@ -59,7 +52,7 @@
                 <th scope="col">Duration</th>
                 <th scope="col">Mode</th>
                 <th scope="col">Status</th>
-                <th scope="col" style="width:3rem"></th>
+                <th scope="col" class="cell-actions" style="width:5.5rem"></th>
               </tr>
             </thead>
             <tbody id="jobs-table-body"></tbody>
@@ -81,11 +74,11 @@
         <div class="dropzone" id="dropzone">
           <p class="dropzone__title">Drag &amp; drop</p>
           <p class="dropzone__hint" id="dropzone-hint">
-            mp3, mp4, m4a, mov, aac, wav, ogg, flac, webm, mpeg, wma, wmv
+            wav, mp3, m4a, flac, ogg, webm, mp4, mov, aac, mpeg, mpg, wma, wmv
           </p>
           <p class="dropzone__or">— OR —</p>
           <button type="button" class="btn btn-ghost">Browse files</button>
-          <input type="file" id="file-input" class="hidden" accept="audio/*,video/*,.mp3,.mp4,.m4a,.wav,.ogg,.flac,.webm,.mov,.aac,.mpeg,.wma,.wmv" />
+          <input type="file" id="file-input" class="hidden" accept="audio/*,video/*,.wav,.mp3,.m4a,.flac,.ogg,.webm,.mp4,.mov,.aac,.mpeg,.mpg,.wma,.wmv" />
         </div>
         <p id="selected-filename" class="hidden" style="margin-top:0.75rem;font-weight:600;color:var(--color-primary)"></p>
       </div>
@@ -98,6 +91,14 @@
       <div class="field">
         <span class="field__label">Transcription mode</span>
         <div id="mode-container"></div>
+      </div>
+
+      <div class="field">
+        <label class="checkbox-row">
+          <input type="checkbox" id="include-timestamps" />
+          <span>Include timestamps in transcript view and TXT download</span>
+        </label>
+        <p class="field__hint">SRT subtitles always include timestamps.</p>
       </div>
 
       <div id="upload-progress" class="hidden" style="margin-bottom:1rem"></div>
@@ -114,6 +115,10 @@
           <p id="transcript-meta" style="margin:0.25rem 0 0;color:var(--color-text-muted);font-size:0.85rem"></p>
         </div>
         <button type="button" class="btn btn-ghost" id="btn-close-transcript" aria-label="Close">✕</button>
+      </div>
+      <div class="transcript-toolbar">
+        <button type="button" class="btn btn-ghost" id="btn-download-txt">Download TXT</button>
+        <button type="button" class="btn btn-ghost" id="btn-download-srt">Download SRT</button>
       </div>
       <div class="transcript-panel" id="transcript-body"></div>
     </div>

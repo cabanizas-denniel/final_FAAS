@@ -1,15 +1,34 @@
 /**
  * Single source of truth for frontend constants (DRY).
- * Backend mirrors profile → beam_size in app/models/schemas.py
+ * Keep ALLOWED_EXTENSIONS in sync with app/core/media.py
+ * Profile → beam_size mirrors app/models/schemas.py
  */
 export const API = {
   transcriptions: "/transcriptions",
 };
 
+export const ALLOWED_EXTENSIONS = [
+  "wav",
+  "mp3",
+  "m4a",
+  "flac",
+  "ogg",
+  "webm",
+  "mp4",
+  "mov",
+  "aac",
+  "mpeg",
+  "mpg",
+  "wma",
+  "wmv",
+];
+
+export const ALLOWED_EXT = ALLOWED_EXTENSIONS.join(", ");
+
 export const PROFILES = [
-  { id: "cheetah", emoji: "🐆", name: "Cheetah", tag: "⚡ Fastest" },
-  { id: "dolphin", emoji: "🐬", name: "Dolphin", tag: "✅ Balanced" },
-  { id: "whale", emoji: "🐋", name: "Whale", tag: "⭐ Most Accurate" },
+  { id: "quick", emoji: "⚡", name: "Quick", tag: "Fastest" },
+  { id: "standard", emoji: "⚖️", name: "Standard", tag: "Balanced" },
+  { id: "precise", emoji: "🔬", name: "Precise", tag: "Most accurate" },
 ];
 
 export const LANGUAGES = [
@@ -23,9 +42,6 @@ export const LANGUAGES = [
   { code: "ko", label: "Korean 🇰🇷" },
   { code: "zh", label: "Chinese 🇨🇳" },
 ];
-
-export const ALLOWED_EXT =
-  "mp3, mp4, m4a, mov, aac, wav, ogg, flac, webm, mpeg, wma, wmv";
 
 export const STATUS = {
   queued: { label: "Queued", badge: "badge--muted", dot: "status-dot--queued" },
@@ -43,3 +59,12 @@ export const PROGRESS = {
 export const PROFILE_EMOJI = Object.fromEntries(
   PROFILES.map((p) => [p.id, p.emoji])
 );
+
+export function fileExtension(name) {
+  const dot = name.lastIndexOf(".");
+  return dot >= 0 ? name.slice(dot + 1).toLowerCase() : "";
+}
+
+export function isAllowedUpload(name) {
+  return ALLOWED_EXTENSIONS.includes(fileExtension(name));
+}

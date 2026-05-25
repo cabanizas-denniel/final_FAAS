@@ -48,17 +48,17 @@ class JobCreated(BaseModel):
 
 
 class TranscriptionProfile(str, Enum):
-    """Speed vs accuracy presets (maps to beam search width)."""
+    """Speed vs accuracy presets (maps to Whisper beam search width)."""
 
-    CHEETAH = "cheetah"
-    DOLPHIN = "dolphin"
-    WHALE = "whale"
+    QUICK = "quick"
+    STANDARD = "standard"
+    PRECISE = "precise"
 
 
 PROFILE_BEAM_SIZES: dict[TranscriptionProfile, int] = {
-    TranscriptionProfile.CHEETAH: 1,
-    TranscriptionProfile.DOLPHIN: 3,
-    TranscriptionProfile.WHALE: 5,
+    TranscriptionProfile.QUICK: 1,
+    TranscriptionProfile.STANDARD: 3,
+    TranscriptionProfile.PRECISE: 5,
 }
 
 
@@ -72,7 +72,11 @@ class JobInfo(BaseModel):
     started_at: Optional[datetime] = None
     finished_at: Optional[datetime] = None
     error: Optional[str] = None
-    profile: TranscriptionProfile = TranscriptionProfile.WHALE
+    profile: TranscriptionProfile = TranscriptionProfile.PRECISE
+    include_timestamps: bool = Field(
+        default=False,
+        description="When true, UI and TXT export show segment time ranges.",
+    )
     result: Optional[TranscriptionResult] = None
 
 

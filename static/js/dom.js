@@ -8,10 +8,13 @@ export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 export function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
   for (const [key, val] of Object.entries(attrs)) {
+    if (val === undefined || val === null) continue;
     if (key === "className") node.className = val;
     else if (key === "text") node.textContent = val;
     else if (key === "html") node.innerHTML = val;
-    else if (key.startsWith("on") && typeof val === "function")
+    else if (key === "disabled") {
+      if (val) node.disabled = true;
+    } else if (key.startsWith("on") && typeof val === "function")
       node.addEventListener(key.slice(2).toLowerCase(), val);
     else node.setAttribute(key, val);
   }

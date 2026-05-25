@@ -41,9 +41,91 @@ export function renderStatusCell(status) {
   ]);
 }
 
-export function renderJobRow(job, { onClick, onDelete }) {
+const ICON_DOWNLOAD = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v9.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.42l2.3 2.3V4a1 1 0 0 1 1-1Zm-7 14a1 1 0 0 1 1 1v2h12v-2a1 1 0 1 1 2 0v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1Z"/></svg>`;
+const ICON_DELETE = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M9 3a1 1 0 0 0-1 1H5a1 1 0 0 0 0 2h1v13a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6h1a1 1 0 1 0 0-2h-3a1 1 0 0 0-1-1H9Zm2 3h2v13h-2V6Zm4 0h2v13h-2V6Z"/></svg>`;
+
+function iconButton({ className, title, html, disabled = false, onClick }) {
+  return el("button", {
+    type: "button",
+    className: `btn-icon ${className || ""}`.trim(),
+    title,
+    "aria-label": title,
+    disabled: disabled ? true : undefined,
+    html,
+    onClick,
+  });
+}
+
+function isJobDownloadable(job) {
+  const status = String(job?.status ?? "").toLowerCase();
+  return status === "completed" || !!(job?.result?.text || job?.result?.segments?.length);
+}
+
+function renderRowActions(job, { onDownloadTxt, onDownloadSrt, onDelete, onToggleMenu }) {
+  const canDownload = isJobDownloadable(job);
+  const wrap = el("div", { className: "row-actions" });
+
+  const menu = el("div", { className: "download-menu hidden" }, [
+    el("button", {
+      type: "button",
+      className: "download-menu__item",
+      text: "Download TXT",
+      onClick: (e) => {
+        e.stopPropagation();
+        menu.classList.add("hidden");
+        onDownloadTxt?.(job);
+      },
+    }),
+    el("button", {
+      type: "button",
+      className: "download-menu__item",
+      text: "Download SRT",
+      onClick: (e) => {
+        e.stopPropagation();
+        menu.classList.add("hidden");
+        onDownloadSrt?.(job);
+      },
+    }),
+  ]);
+
+  const downloadWrap = el("div", { className: "row-actions__download" }, [
+    iconButton({
+      className: canDownload ? "" : "is-disabled",
+      title: canDownload ? "Download transcript" : "Available when transcription completes",
+      html: ICON_DOWNLOAD,
+      disabled: !canDownload,
+      onClick: (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!canDownload) return;
+        onToggleMenu?.(menu, e.currentTarget);
+      },
+    }),
+    menu,
+  ]);
+
+  wrap.append(
+    downloadWrap,
+    iconButton({
+      className: "btn-icon--danger",
+      title: "Delete",
+      html: ICON_DELETE,
+      onClick: (e) => {
+        e.stopPropagation();
+        onDelete?.(job);
+      },
+    })
+  );
+
+  return el("td", {
+    className: "cell-actions",
+    onClick: (e) => e.stopPropagation(),
+  }, [wrap]);
+}
+
+export function renderJobRow(job, { onClick, onDownloadTxt, onDownloadSrt, onDelete, onToggleMenu }) {
   const duration = job.result?.duration ?? null;
-  const profile = job.profile || "whale";
+  const profile = job.profile || "precise";
 
   const row = el("tr", {
     "data-job-id": job.job_id,
@@ -55,20 +137,9 @@ export function renderJobRow(job, { onClick, onDelete }) {
     el("td", { className: "cell-name", text: job.filename }),
     el("td", { text: formatDate(job.created_at) }),
     el("td", { text: formatDuration(duration) }),
-    el("td", { text: PROFILE_EMOJI[profile] || "🐋", title: profile }),
+    el("td", { text: PROFILE_EMOJI[profile] || "🔬", title: profile }),
     renderStatusCell(job.status),
-    el("td", {}, [
-      el("button", {
-        type: "button",
-        className: "btn btn-ghost",
-        text: "⋯",
-        title: "Delete",
-        onClick: (e) => {
-          e.stopPropagation();
-          onDelete?.(job);
-        },
-      }),
-    ])
+    renderRowActions(job, { onDownloadTxt, onDownloadSrt, onDelete, onToggleMenu })
   );
 
   return row;

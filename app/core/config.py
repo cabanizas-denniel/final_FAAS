@@ -10,6 +10,7 @@ from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from app.core.language import normalize_language
+from app.core.media import ALLOWED_AUDIO_EXTENSIONS
 
 
 class Settings(BaseSettings):
@@ -34,10 +35,8 @@ class Settings(BaseSettings):
 
     # --- Uploads -----------------------------------------------------------
     upload_dir: Path = Field(default=Path("uploads"))
-    max_upload_mb: int = Field(default=50)
-    allowed_extensions: tuple[str, ...] = Field(
-        default=("wav", "mp3", "m4a", "flac", "ogg", "webm", "mp4")
-    )
+    max_upload_mb: int = Field(default=200)
+    allowed_extensions: tuple[str, ...] = Field(default=ALLOWED_AUDIO_EXTENSIONS)
 
     # --- Whisper / faster-whisper -----------------------------------------
     # Model sizes: tiny, base, small, medium, large-v3

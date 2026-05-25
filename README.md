@@ -158,7 +158,7 @@ Removes the job record and the stored audio file.
 | `API_PORT`              | `8000`                    | Bind port (also the host-side port via compose).             |
 | `LOG_LEVEL`             | `INFO`                    | Python log level.                                            |
 | `UPLOAD_DIR`            | `uploads`                 | Where uploaded audio is stored.                              |
-| `MAX_UPLOAD_MB`         | `50`                      | Per-upload size cap (enforced while streaming to disk).      |
+| `MAX_UPLOAD_MB`         | `200`                     | Per-upload size cap (enforced while streaming to disk).      |
 | `WHISPER_MODEL`         | `tiny`                    | `tiny`, `base`, `small`, `medium`, `large-v3`.               |
 | `WHISPER_DEVICE`        | `cpu`                     | `cpu`, `cuda`, or `auto`.                                    |
 | `WHISPER_COMPUTE_TYPE`  | `int8`                    | `int8` (CPU), `float16` (GPU), `float32`, etc.               |
@@ -167,9 +167,11 @@ Removes the job record and the stored audio file.
 | `MAX_CONCURRENT_JOBS`   | `2`                       | Semaphore cap on parallel transcriptions.                    |
 | `JOB_RETENTION_SECONDS` | `3600`                    | Finished jobs are pruned after this many seconds.            |
 
-## Supported Audio Formats
+## Supported Audio / Video Formats
 
-`wav`, `mp3`, `m4a`, `flac`, `ogg`, `webm`, `mp4` (decoded via `ffmpeg`).
+`wav`, `mp3`, `m4a`, `flac`, `ogg`, `webm`, `mp4`, `mov`, `aac`, `mpeg`, `mpg`, `wma`, `wmv` (decoded via `ffmpeg` inside faster-whisper).
+
+Upload profiles: **quick** (fastest), **standard** (balanced), **precise** (slowest, best accuracy) — each maps to a different Whisper `beam_size`.
 
 ## Production Notes
 

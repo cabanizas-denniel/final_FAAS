@@ -32,14 +32,20 @@ export async function deleteJob(jobId) {
  * Upload with XMLHttpRequest so we get upload progress events.
  * Returns the JobCreated payload.
  */
-export function uploadTranscription(file, { language, profile, onUploadProgress }) {
+export function uploadTranscription(
+  file,
+  { language, profile, includeTimestamps, onUploadProgress }
+) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     const form = new FormData();
     form.append("file", file);
     const lang = (language || "").trim();
     if (lang) form.append("language", lang);
-    form.append("profile", profile || "whale");
+    form.append("profile", profile || "precise");
+    if (includeTimestamps) {
+      form.append("include_timestamps", "true");
+    }
 
     xhr.open("POST", API.transcriptions);
 
