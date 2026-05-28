@@ -1,18 +1,12 @@
-"""FastAPI application entry point.
-
-Wires together the config, services, workers, and routes. The Whisper model
-is eagerly loaded during the lifespan startup phase so the first request
-isn't penalized by cold-start latency.
-"""
+"""FastAPI application entry point — FaaS orchestrator."""
 
 from __future__ import annotations
 
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
-
 from pathlib import Path
+from typing import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,7 +18,6 @@ from app.api.routes import health, transcription
 from app.core.config import get_settings
 from app.core.logging import configure_logging
 from app.services.job_store import JobStore
-from app.services.transcriber import Transcriber
 from app.workers.tasks import TranscriptionWorker
 
 logger = logging.getLogger(__name__)
@@ -38,24 +31,20 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     settings.upload_dir.mkdir(parents=True, exist_ok=True)
 
-    transcriber = Transcriber(settings)
-    # Warm up the model off the event loop so /health reports ready faster.
-    await asyncio.to_thread(transcriber.load)
-
-    job_store = JobStore(retention_seconds=settings.job_retention_seconds)
+    job_store = JobStore(
+        retention_seconds=settings.job_retention_seconds,
+        persist_dir=settings.upload_dir / "jobs",
+    )
     worker = TranscriptionWorker(
-        transcriber=transcriber,
         job_store=job_store,
         max_concurrent=settings.max_concurrent_jobs,
     )
 
     app.state.settings = settings
-    app.state.transcriber = transcriber
     app.state.job_store = job_store
     app.state.worker = worker
 
     pruner = asyncio.create_task(_prune_loop(job_store), name="job-pruner")
-
     try:
         yield
     finally:
@@ -68,7 +57,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 async def _prune_loop(job_store: JobStore, interval_seconds: int = 300) -> None:
-    """Periodically purge expired jobs."""
     while True:
         try:
             await asyncio.sleep(interval_seconds)
@@ -89,8 +77,8 @@ def create_app() -> FastAPI:
         title=settings.app_name,
         version=__version__,
         description=(
-            "Lightweight Function-as-a-Service for audio transcription "
-            "powered by FastAPI and faster-whisper."
+            "Function-as-a-Service audio transcription — each transcription "
+            "runs in its own ephemeral Docker container."
         ),
         lifespan=lifespan,
     )
@@ -113,16 +101,10 @@ def create_app() -> FastAPI:
         @app.get("/", include_in_schema=False)
         async def serve_dashboard() -> FileResponse:
             return FileResponse(static_dir / "index.html")
-
     else:
-
         @app.get("/", include_in_schema=False)
         async def root() -> dict[str, str]:
-            return {
-                "name": settings.app_name,
-                "version": __version__,
-                "docs": "/docs",
-            }
+            return {"name": settings.app_name, "version": __version__, "docs": "/docs"}
 
     return app
 

@@ -95,4 +95,4 @@ class HealthResponse(BaseModel):
     version: str
     model: str
     device: str
-    model_loaded: bool
+    docker_available: bool

@@ -1,12 +1,9 @@
-"""Thread-safe, in-memory job registry.
-
-Replace with Redis / a database for multi-replica deployments. This minimal
-implementation is sufficient for a local single-process FaaS.
-"""
+"""Thread-safe job registry with optional JSON persistence under the upload volume."""
 
 from __future__ import annotations
 
 import asyncio
+import json
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -25,9 +22,7 @@ class Job:
     filename: str
     audio_path: Path
     status: JobStatus = JobStatus.QUEUED
-    created_at: datetime = field(
-        default_factory=lambda: datetime.now(timezone.utc)
-    )
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     started_at: Optional[datetime] = None
     finished_at: Optional[datetime] = None
     error: Optional[str] = None
@@ -52,13 +47,81 @@ class Job:
         )
 
 
-class JobStore:
-    """Async-safe job registry with optional TTL-based pruning."""
+def _job_from_disk(data: dict) -> Job | None:
+    try:
+        audio_path = Path(data.pop("audio_path"))
+        language = data.pop("language", None)
+        beam_size = int(data.pop("beam_size", 5))
+        info = JobInfo.model_validate(data)
+    except (KeyError, ValueError, TypeError):
+        return None
+    status = info.status
+    error = info.error
+    if status in (JobStatus.QUEUED, JobStatus.PROCESSING):
+        status = JobStatus.FAILED
+        error = "Interrupted by server restart"
+    return Job(
+        id=info.job_id,
+        filename=info.filename,
+        audio_path=audio_path,
+        status=status,
+        created_at=info.created_at,
+        started_at=info.started_at,
+        finished_at=info.finished_at,
+        error=error,
+        result=info.result,
+        language=language,
+        profile=info.profile,
+        beam_size=beam_size,
+        include_timestamps=info.include_timestamps,
+    )
 
-    def __init__(self, retention_seconds: int = 3600) -> None:
+
+class JobStore:
+    """Async-safe job registry with TTL-based pruning and optional disk persistence."""
+
+    def __init__(
+        self,
+        retention_seconds: int = 3600,
+        persist_dir: Optional[Path] = None,
+    ) -> None:
         self._jobs: dict[str, Job] = {}
         self._lock = asyncio.Lock()
         self._retention_seconds = retention_seconds
+        self._persist_dir = persist_dir
+
+        if persist_dir:
+            persist_dir.mkdir(parents=True, exist_ok=True)
+            for path in persist_dir.glob("*.json"):
+                try:
+                    job = _job_from_disk(json.loads(path.read_text(encoding="utf-8")))
+                except (json.JSONDecodeError, OSError):
+                    continue
+                if job and job.audio_path.exists():
+                    self._jobs[job.id] = job
+
+    # ------------------------------------------------------------------
+    # Persistence helpers
+    # ------------------------------------------------------------------
+
+    def _persist(self, job: Job) -> None:
+        if not self._persist_dir:
+            return
+        payload = job.to_info().model_dump(mode="json")
+        payload["audio_path"] = str(job.audio_path)
+        payload["language"] = job.language
+        payload["beam_size"] = job.beam_size
+        (self._persist_dir / f"{job.id}.json").write_text(
+            json.dumps(payload), encoding="utf-8"
+        )
+
+    def _drop(self, job_id: str) -> None:
+        if self._persist_dir:
+            (self._persist_dir / f"{job_id}.json").unlink(missing_ok=True)
+
+    # ------------------------------------------------------------------
+    # CRUD
+    # ------------------------------------------------------------------
 
     async def create(
         self,
@@ -80,6 +143,7 @@ class JobStore:
         )
         async with self._lock:
             self._jobs[job.id] = job
+        self._persist(job)
         return job
 
     async def get(self, job_id: str) -> Optional[Job]:
@@ -88,29 +152,27 @@ class JobStore:
 
     async def list_all(self, limit: int = 100) -> list[Job]:
         async with self._lock:
-            jobs = sorted(
-                self._jobs.values(),
-                key=lambda j: j.created_at,
-                reverse=True,
-            )
+            jobs = sorted(self._jobs.values(), key=lambda j: j.created_at, reverse=True)
         return jobs[:limit]
 
     async def update(self, job: Job) -> None:
         async with self._lock:
             self._jobs[job.id] = job
+        self._persist(job)
 
     async def delete(self, job_id: str) -> bool:
         async with self._lock:
             job = self._jobs.pop(job_id, None)
-        if job and job.audio_path.exists():
-            try:
-                job.audio_path.unlink()
-            except OSError:
-                pass
+        if job:
+            self._drop(job_id)
+            if job.audio_path.exists():
+                try:
+                    job.audio_path.unlink()
+                except OSError:
+                    pass
         return job is not None
 
     async def prune_expired(self) -> int:
-        """Remove finished jobs older than `retention_seconds`. Returns count."""
         cutoff = time.time() - self._retention_seconds
         removed = 0
         async with self._lock:
@@ -118,6 +180,7 @@ class JobStore:
                 job = self._jobs[jid]
                 if job.finished_at and job.finished_at.timestamp() < cutoff:
                     del self._jobs[jid]
+                    self._drop(jid)
                     removed += 1
                     if job.audio_path.exists():
                         try:
